@@ -154,6 +154,24 @@ has:
 
    The v0 ships with this one.
 
+**Picking the interpreter, and getting Nano onto the phone:**
+- **The app cannot install AICore.** It is part of the system, installed
+  and updated by Android and the Play Store. If it is missing, the phone is
+  not supported. If it is there but out of date, the app can at most open
+  its Play Store page.
+- **Never at startup.** Startup stays instant. The check runs in the
+  background, and the rules serve in the meantime.
+- **What the app does with ML Kit's answer:**
+  - `AVAILABLE`: use Nano.
+  - `DOWNLOADABLE`: **ask the user first** ("download the assistant, about
+    X GB, on Wi-Fi?"), then ask ML Kit to download. AICore downloads the
+    model once, for the whole phone. Never silently.
+  - `DOWNLOADING`: rules meanwhile, then Nano once the model is ready.
+  - `UNAVAILABLE`: Gemma if its model file is installed, otherwise the
+    rules, with no error message.
+- **Check again from time to time** (once a day), since a system update can
+  make Nano available later.
+
 Whatever the interpreter, the engine decides (frequencies, rhythms, time)
 and the interpreter only understands and explains. An AI interpreter talks
 to the engine through the same commands as the UI, which are its tools.

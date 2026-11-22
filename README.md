@@ -95,6 +95,49 @@ This also makes sync safe:
 - **A dinner both people logged** (same dish, same day, same meal slot)
   counts as one meal, so frequencies are not doubled.
 
+### Sync
+
+1. **Pairing, once:** one phone shows a QR code, the other scans it. They
+   now share a household id and an encryption key.
+2. **Sync:** with both phones on the same Wi-Fi, press "Synchronize". The
+   phones find each other on the local network, exchange the events the
+   other is missing, and merge.
+3. **Fallback:** the shopping list can be sent as plain text through the
+   Android share menu, for when one person is at the store and the other at
+   home.
+
+### The input box and its interpreter
+
+The app has **one free-text box**. You can type a sentence ("we had a
+curry tonight", "leftover lasagne, then a salad", "away from the 3rd to the
+10th") or paste a whole recipe copied from a site. The text goes through an
+`Interpreter`, which turns it into engine commands (`LogMeal`,
+`CreateRecipe`, `SetAbsence`...). The app shows the result, and nothing is
+saved until you confirm it.
+
+The interpreter is interchangeable, and the app uses the best one the phone
+has:
+1. **`NanoInterpreter`**: Gemini Nano, through ML Kit's Prompt API on top
+   of AICore, the Android system service. The system manages the model:
+   on recent Pixels it is usually already on the phone, and elsewhere the
+   system downloads it once. The APK stays small. It is only available on
+   recent, mostly high-end phones (Pixel, recent Galaxy S, a few others).
+2. **`GemmaInterpreter`**: a Gemma model file run inside the app (LiteRT-LM
+   or llama.cpp), fully offline, on any phone with enough memory (6-8 GB of
+   RAM, a 1-3 GB model installed once).
+3. **`RuleInterpreter`**: no AI and always there. Simple, tested rules
+   still understand most input:
+   - a known dish name, with words like "tonight", "yesterday", "at lunch";
+   - "from the 3rd to the 10th" as an absence;
+   - for a pasted recipe, lines with quantities as ingredients, numbered
+     lines as steps, and "30 min" as the time.
+
+   The v0 ships with this one.
+
+Whatever the interpreter, the engine decides (frequencies, rhythms, time)
+and the interpreter only understands and explains. An AI interpreter talks
+to the engine through the same commands as the UI, which are its tools.
+
 ## Architecture
 
 Clean Architecture with domain-driven design. **Dependencies only point
@@ -151,49 +194,6 @@ adapter and nothing else.
 - compatibility: the event golden tests above;
 - behaviour: replays of a simulated household's month must give the
   expected suggestions.
-
-### Sync
-
-1. **Pairing, once:** one phone shows a QR code, the other scans it. They
-   now share a household id and an encryption key.
-2. **Sync:** with both phones on the same Wi-Fi, press "Synchronize". The
-   phones find each other on the local network, exchange the events the
-   other is missing, and merge.
-3. **Fallback:** the shopping list can be sent as plain text through the
-   Android share menu, for when one person is at the store and the other at
-   home.
-
-### The input box and its interpreter
-
-The app has **one free-text box**. You can type a sentence ("we had a
-curry tonight", "leftover lasagne, then a salad", "away from the 3rd to the
-10th") or paste a whole recipe copied from a site. The text goes through an
-`Interpreter`, which turns it into engine commands (`LogMeal`,
-`CreateRecipe`, `SetAbsence`...). The app shows the result, and nothing is
-saved until you confirm it.
-
-The interpreter is interchangeable, and the app uses the best one the phone
-has:
-1. **`NanoInterpreter`**: Gemini Nano, through ML Kit's Prompt API on top
-   of AICore, the Android system service. The system manages the model:
-   on recent Pixels it is usually already on the phone, and elsewhere the
-   system downloads it once. The APK stays small. It is only available on
-   recent, mostly high-end phones (Pixel, recent Galaxy S, a few others).
-2. **`GemmaInterpreter`**: a Gemma model file run inside the app (LiteRT-LM
-   or llama.cpp), fully offline, on any phone with enough memory (6-8 GB of
-   RAM, a 1-3 GB model installed once).
-3. **`RuleInterpreter`**: no AI and always there. Simple, tested rules
-   still understand most input:
-   - a known dish name, with words like "tonight", "yesterday", "at lunch";
-   - "from the 3rd to the 10th" as an absence;
-   - for a pasted recipe, lines with quantities as ingredients, numbered
-     lines as steps, and "30 min" as the time.
-
-   The v0 ships with this one.
-
-Whatever the interpreter, the engine decides (frequencies, rhythms, time)
-and the interpreter only understands and explains. An AI interpreter talks
-to the engine through the same commands as the UI, which are its tools.
 
 ## Features, built as the data accumulates
 

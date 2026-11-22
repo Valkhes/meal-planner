@@ -29,7 +29,9 @@ network.
    independent and nobody has anything to host.
 4. **No tracking chores.** The only input is "we ate this dish", in under
    10 seconds. No inventory, no "what's left in the fridge", no streaks.
-   Gaps are normal: a week without input is fine.
+   The only nudge is the evening reminder (below), sent only when nothing
+   was logged, and answerable from the notification itself. Gaps are
+   normal: a week without input is fine.
 5. **Habits come from real frequency**, never from what people declare
    they like. The app has a break-in period of a few weeks before its advice
    is worth anything.
@@ -238,6 +240,26 @@ Three screens:
    interval ("about every 9 days"), sorted by frequency.
 3. **Dish page**: its recipe, written by the user (ingredients, steps,
    time) and editable, plus the dates it was eaten.
+
+Plus **the evening reminder**, since the whole app depends on meals being
+logged:
+- **When:** at a time the user picks (21:00 by default), and only if no
+  dinner was logged that evening. There is no reminder during absences,
+  and none on a day marked "eating out".
+- **Answer in the notification**, without opening the app:
+  - buttons with the two most likely dishes (the ones that are due, or the
+    last ones made);
+  - "Other…", a text field sent to the interpreter ("leftover curry");
+  - "Not at home", which records nothing and does not count as a gap.
+- **Never insistent:** one notification per evening, no follow-up. After a
+  week of reminders ignored in a row, it suggests lowering the frequency,
+  or turning it off, instead of pushing harder.
+- **Local only:** scheduled on the phone (WorkManager and an exact alarm
+  for the time), with no push service. Firebase Cloud Messaging would go
+  through Google's servers.
+- **With two phones** (once sync exists): each phone reminds its owner. If
+  both answer, the two logs count as one meal, as for any dinner logged
+  twice.
 
 The v0 runs on one phone. The event log is there from day one, so sync can
 be added later with no migration.

@@ -73,13 +73,47 @@ due) are pure functions, tested separately.
    Android share menu, for when one person is at the store and the other at
    home.
 
+### The input box and its interpreter
+
+The app has **one free-text box**. You can type a sentence ("we had a
+curry tonight", "leftover lasagne, then a salad", "away from the 3rd to the
+10th") or paste a whole recipe copied from a site. The text goes through an
+`Interpreter`, which turns it into engine commands (`LogMeal`,
+`CreateRecipe`, `SetAbsence`...). The app shows the result, and nothing is
+saved until you confirm it.
+
+The interpreter is interchangeable, and the app uses the best one the phone
+has:
+1. **`NanoInterpreter`**: Gemini Nano, through ML Kit's Prompt API on top
+   of AICore, the Android system service. The system manages the model:
+   on recent Pixels it is usually already on the phone, and elsewhere the
+   system downloads it once. The APK stays small. It is only available on
+   recent, mostly high-end phones (Pixel, recent Galaxy S, a few others).
+2. **`GemmaInterpreter`**: a Gemma model file run inside the app (LiteRT-LM
+   or llama.cpp), fully offline, on any phone with enough memory (6-8 GB of
+   RAM, a 1-3 GB model installed once).
+3. **`RuleInterpreter`**: no AI and always there. Simple, tested rules
+   still understand most input:
+   - a known dish name, with words like "tonight", "yesterday", "at lunch";
+   - "from the 3rd to the 10th" as an absence;
+   - for a pasted recipe, lines with quantities as ingredients, numbered
+     lines as steps, and "30 min" as the time.
+
+   The v0 ships with this one.
+
+Whatever the interpreter, the engine decides (frequencies, rhythms, time)
+and the interpreter only understands and explains. An AI interpreter talks
+to the engine through the same commands as the UI, which are its tools.
+
 ## Features, built as the data accumulates
 
 ### v0: log and see (start here)
 
 Three screens:
-1. **"We ate…"**: type the dish name (autocomplete on dishes already
-   logged), the date defaults to today, confirm. Under 10 seconds.
+1. **The input box**: type "curry tonight", "pasta yesterday at lunch",
+   or paste a whole recipe (see below). The app shows what it understood
+   (autocomplete on dishes already logged, the date defaults to today) and
+   you confirm. Under 10 seconds for a meal.
 2. **Dishes**: every dish with how many times, last time, and typical
    interval ("about every 9 days"), sorted by frequency.
 3. **Dish page**: its recipe, written by the user (ingredients, steps,
@@ -112,13 +146,11 @@ be added later with no migration.
   seen before, an image-text model suggests a name from a list of common
   dishes. The recipe is never guessed from the photo: it comes from the
   dish page.
-- **A local AI agent** (Gemma 3n via MediaPipe LLM Inference, or Gemini
-  Nano where the system offers it). It turns plain sentences into commands
-  ("we made a curry tonight"), explains suggestions, structures a recipe
-  pasted as text, and answers "find something close to what we like, under
-  30 min" by calling the engine. The engine decides; the agent understands
-  and explains. It needs a recent phone (6-8 GB of RAM) and a 1-3 GB model,
-  so it is optional.
+- **A conversational local agent** on top of the input box (see "The
+  input box and its interpreter"). It talks with you: it asks when
+  something is ambiguous ("the green curry or the chicken one?"), explains
+  suggestions, and answers "find something close to what we like, under
+  30 min" by calling the engine.
 
 ## Open decisions
 
@@ -127,10 +159,19 @@ be added later with no migration.
   without AI. But fetching the page contacts the internet: no personal data
   is sent, yet the site sees the IP address and the page. Allow it only on
   an explicit user action, or leave it out.
-- **Getting the AI model onto the phone**: a one-time download the user
+- **Gemini Nano and constraint 1.** Inference with Nano runs on the phone,
+  so meals and recipes are not sent anywhere. But ML Kit, as far as its
+  privacy terms go (to be checked), sends usage and performance metrics to
+  Google. That is not content, but it does leave the phone. Accept that
+  trade-off for Nano's convenience, or use only Gemma and the rules, which
+  send nothing.
+- **Getting a Gemma model onto the phone**: a one-time download the user
   starts, from a known source, or a file copied by hand.
 
 ## Technology
 
 Native Android: Kotlin, Jetpack Compose, Room (SQLite). The rules are
-plain Kotlin with unit tests on the JVM. Sync and the AI agent come later.
+plain Kotlin with unit tests on the JVM, and so is the `RuleInterpreter`.
+Sync and the AI interpreters come later; a first test will measure Nano
+and Gemma on real phones (speed, quality on pasted recipes and everyday
+sentences).

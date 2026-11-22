@@ -41,11 +41,53 @@ network.
 
 ## How it works
 
-### The data: an append-only event log
+### Data that survives iteration
 
-Every action is an event, for example `MealLogged`, `RecipeEdited` or
-`AbsenceSet`. Each event has a unique id, a device id and a timestamp, and
-is never modified. This makes sync trivial and safe:
+The app will change a lot. **Changing it must never mean converting or
+re-saving the stored data.** That is why the only thing kept for good is
+the event log. Everything else is derived from it and can be thrown away.
+
+**The event log is the source of truth.** Every action is an event, for
+example `MealLogged`, `DishRenamed`, `RecipeEdited` or `AbsenceSet`. An
+event is stored once and never modified. Its envelope never changes:
+
+| Field | Content |
+|---|---|
+| `id` | UUIDv7: unique and sortable by time, generated on the phone |
+| `type` | the event name, e.g. `MealLogged` |
+| `version` | the version of that event's schema, from 1 |
+| `householdId`, `deviceId` | which household, which phone |
+| `occurredAt` | when it happened (the meal), as the user says |
+| `recordedAt` | when the phone recorded it |
+| `payload` | the event's content as JSON |
+
+**Everything else is a projection**, a read model rebuilt from the log:
+- the dish list;
+- frequencies and intervals;
+- the shopping list;
+- whatever a future feature needs.
+
+Each projection has a version number. When its code or shape changes, the
+version goes up, and at startup the app drops that projection and replays
+the log into it. A few years of meals is a few thousand events, so a rebuild
+takes well under a second. **Adding a feature means adding a projection,
+never migrating data.**
+
+**How event schemas evolve**, so that old events stay readable forever:
+- **A released event type is never edited.** Adding an optional field with
+  a default is allowed in place.
+- **Any other change makes a new version** (`MealLogged` v2) together with
+  an *upcaster*: a pure function that turns v1 into v2 when the log is read.
+  Old events stay untouched on disk, and the code only ever sees the latest
+  version.
+- **Facts are corrected by new facts, never by rewriting.** Renaming a dish
+  is `DishRenamed`, merging two dishes is `DishesMerged`, a wrong log is
+  `MealRetracted`. History is kept, and the meaning comes from replaying it.
+- **Every event version ever released has a golden test**: a real stored
+  sample that must still upcast and replay to the expected state. Breaking
+  compatibility makes the build fail.
+
+This also makes sync safe:
 - **Merging two phones** means taking the union of their events: nothing
   is lost and the order does not matter.
 - **A recipe edited on both phones**: the most recent edit wins, field by
@@ -53,14 +95,62 @@ is never modified. This makes sync trivial and safe:
 - **A dinner both people logged** (same dish, same day, same meal slot)
   counts as one meal, so frequencies are not doubled.
 
-The current state (dishes, frequencies, recipes) is computed from the log.
+## Architecture
 
-### The engine: `MealServer`
+Clean Architecture with domain-driven design. **Dependencies only point
+inwards**: the domain knows nothing about Android, the database, the
+network or AI.
 
-The UI only talks to a `MealServer` interface, which accepts commands and
-returns results. Today it is `LocalMealServer`: a local database on the
-phone (SQLite via Room). The rules (frequency, typical interval, what is
-due) are pure functions, tested separately.
+```
+app (Compose UI, ViewModels)
+        |
+infrastructure (Room event store, projections, LAN sync,
+        |       Nano and Gemma interpreters, clock, ids)
+        |       implements the ports below
+application (commands and queries = use cases, ports:
+        |    EventStore, Clock, IdGenerator, Interpreter, SyncTransport)
+        |
+domain (pure Kotlin: aggregates, value objects, domain events, rules)
+```
+
+**One Gradle module per layer** (`:domain`, `:application`,
+`:infrastructure`, `:app`). That way the compiler enforces the dependency
+rule: `:domain` cannot import Android, because it does not depend on it.
+
+**Bounded contexts.** Each is a package in every layer and owns its own
+events and language. A context talks to another only through its
+application API or its events, never through its internals.
+
+| Context | What it owns |
+|---|---|
+| **Journal** | meals eaten (`MealLogged`, `MealRetracted`) |
+| **Cookbook** | dishes and their recipes (`DishCreated`, `DishRenamed`, `DishesMerged`, `RecipeEdited`) |
+| **Habits** | read side only: frequency, typical interval, weekday patterns, real cooking time |
+| **Planning** | absences, "Tonight", the week plan |
+| **Shopping** | the shared list |
+| **Household** | phones, pairing, sync |
+| **Assistant** | interpreters: text to commands |
+
+**CQRS:**
+- A **command** (`LogMeal`, `EditRecipe`...) is validated by its aggregate
+  and appends events.
+- A **query** (`Dishes`, `Tonight`...) reads projections.
+
+`MealServer` is the application's single entry point. It exposes these
+commands and queries to the UI today, and as tools to an AI interpreter or
+an MCP server later. Today its implementation is `LocalMealServer`.
+
+**Ports and adapters.** Everything outside the domain sits behind an
+interface defined by the application: storage, time, ids, interpreters,
+sync. Swapping Room for something else, or the rules for Nano, changes one
+adapter and nothing else.
+
+**Testing:**
+- domain rules: plain unit tests on the JVM;
+- use cases: in-memory adapters;
+- compatibility: the event golden tests above;
+- behaviour: replays of a simulated household's month must give the
+  expected suggestions.
 
 ### Sync
 
@@ -170,8 +260,10 @@ be added later with no migration.
 
 ## Technology
 
-Native Android: Kotlin, Jetpack Compose, Room (SQLite). The rules are
-plain Kotlin with unit tests on the JVM, and so is the `RuleInterpreter`.
+Native Android: Kotlin, Jetpack Compose, Room (SQLite) as the event store
+and projection cache, kotlinx.serialization for event payloads, Gradle
+modules per layer. The domain and the `RuleInterpreter` are plain Kotlin
+with unit tests on the JVM.
 Sync and the AI interpreters come later; a first test will measure Nano
 and Gemma on real phones (speed, quality on pasted recipes and everyday
 sentences).

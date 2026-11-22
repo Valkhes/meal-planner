@@ -40,6 +40,24 @@ network.
    (or, one day, an MCP tool) will be another client of the same commands,
    with nothing duplicated.
 7. **Any AI is 100% local** and optional: the app works fully without it.
+8. **English first, French native.** Everything in the repository is in
+   English: code, comments, docs, commits. The app's default language is
+   English, and it is fully in French when the phone is set to French.
+   - **Texts:** every user-facing text is an Android string resource,
+     never a literal in code. English goes in `values/`, French in
+     `values-fr/`. A missing French translation fails the build (lint
+     `MissingTranslation` treated as an error).
+   - **Language:** the app follows the phone's language, and Android's
+     per-app language setting (Android 13+) can override it.
+   - **Formats:** dates, times, numbers and units are formatted for the
+     current locale.
+   - **User data is never translated:** a dish called "gratin dauphinois"
+     keeps its name.
+   - **Every interpreter understands both languages.** The rules know the
+     English and French words for time ("tonight" / "ce soir",
+     "yesterday at lunch" / "hier midi", "from the 3rd to the 10th" /
+     "du 3 au 10") and for units ("tbsp" / "c. à soupe", "cup", "g",
+     "cl"). An AI interpreter answers in the language you used.
 
 ## How it works
 

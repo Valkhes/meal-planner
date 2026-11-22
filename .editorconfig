@@ -1,0 +1,14 @@
+root = true
+
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 160
+ktlint_code_style = ktlint_official
+# Compose resources generate one accessor per string: import them on demand.
+ij_kotlin_packages_to_use_import_on_demand = dev.valkhes.mealplanner.ui.generated.**
+# Composable functions are PascalCase by convention.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# Generated code (Compose resource accessors) is not ours to format.
+[**/build/**]
+ktlint_standard = disabled

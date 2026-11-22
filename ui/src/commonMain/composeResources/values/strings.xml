@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meal Planner</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_dishes">Dishes</string>
+
+    <string name="input_placeholder">What did you eat? Or paste a recipe</string>
+    <string name="input_go">OK</string>
+    <string name="not_understood">I didn\'t get that. Type a dish, like \"curry tonight\", or paste a recipe of at least three lines.</string>
+
+    <string name="proposal_meal_title">Log this meal?</string>
+    <string name="field_dish">Dish</string>
+    <string name="day_previous">Previous day</string>
+    <string name="day_next">Next day</string>
+    <string name="slot_lunch">Lunch</string>
+    <string name="slot_dinner">Dinner</string>
+    <string name="slot_other">Other</string>
+
+    <string name="proposal_recipe_title">Save this recipe?</string>
+    <string name="recipe_name">Recipe name</string>
+    <string name="recipe_replaces">Replaces the recipe of %1$s.</string>
+    <string name="minutes_value">%1$d min</string>
+    <plurals name="ingredients_count">
+        <item quantity="one">%1$d ingredient</item>
+        <item quantity="other">%1$d ingredients</item>
+    </plurals>
+    <plurals name="steps_count">
+        <item quantity="one">%1$d step</item>
+        <item quantity="other">%1$d steps</item>
+    </plurals>
+
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_back">Back</string>
+
+    <string name="recent_title">Recently</string>
+    <string name="recent_empty">Nothing logged yet. Type what you ate above.</string>
+    <string name="dishes_empty">No dish yet. Log what you eat on the home screen.</string>
+
+    <string name="date_today">today</string>
+    <string name="date_yesterday">yesterday</string>
+    <plurals name="date_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="date_day_month">%2$s %1$d</string>
+    <string-array name="months_short">
+        <item>Jan</item>
+        <item>Feb</item>
+        <item>Mar</item>
+        <item>Apr</item>
+        <item>May</item>
+        <item>Jun</item>
+        <item>Jul</item>
+        <item>Aug</item>
+        <item>Sep</item>
+        <item>Oct</item>
+        <item>Nov</item>
+        <item>Dec</item>
+    </string-array>
+
+    <plurals name="times_count">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
+    </plurals>
+    <string name="last_eaten">last %1$s</string>
+    <plurals name="every_days">
+        <item quantity="one">about every day</item>
+        <item quantity="other">about every %1$d days</item>
+    </plurals>
+    <string name="never_eaten">not eaten yet</string>
+
+    <string name="recipe_title">Recipe</string>
+    <string name="recipe_none">No recipe yet.</string>
+    <string name="ingredients_title">Ingredients</string>
+    <string name="steps_title">Steps</string>
+    <string name="notes_title">Notes</string>
+    <string name="ingredients_hint">One per line, like \"200 g flour\"</string>
+    <string name="steps_hint">One step per line</string>
+    <string name="minutes_label">Time, in minutes</string>
+    <string name="history_title">Eaten</string>
+    <string name="rename_label">Name</string>
+
+    <string name="error_dish_name_empty">The dish needs a name.</string>
+    <string name="error_dish_name_too_long">That name is too long.</string>
+    <string name="error_dish_name_taken">Another dish already has that name.</string>
+    <string name="error_dish_unknown">That dish no longer exists.</string>
+    <string name="error_meal_unknown">That meal no longer exists.</string>
+    <string name="error_meal_already_retracted">That meal was already removed.</string>
+    <string name="error_recipe_invalid">Something in this recipe is not valid: check the time and the length of the lines.</string>
+</resources>

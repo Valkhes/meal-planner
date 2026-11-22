@@ -9,7 +9,9 @@ It is an Android app that keeps **everything on the phone**: no server, no
 account, no cloud. Two phones in the same household sync over the local
 network.
 
-**Status: design.** No code yet. This README is the specification.
+**Status: v0 in development.** This README is the specification.
+`CLAUDE.md` holds the working rules, and `bash tools/check.sh` checks
+everything (CI runs it on every push).
 
 ## Constraints (non-negotiable)
 
@@ -87,11 +89,12 @@ event is stored once and never modified. Its envelope never changes:
 - the shopping list;
 - whatever a future feature needs.
 
-Each projection has a version number. When its code or shape changes, the
-version goes up, and at startup the app drops that projection and replays
-the log into it. A few years of meals is a few thousand events, so a rebuild
-takes well under a second. **Adding a feature means adding a projection,
-never migrating data.**
+The read state is never saved: the app replays the log into memory at
+every start. A few years of meals is a few thousand events, so this takes
+well under a second. Its shape can change with every release, freely. If
+startup ever gets slow, a projection can be cached on disk with a version
+number, dropped and rebuilt whenever its code changes. **Adding a feature
+means adding a projection, never migrating data.**
 
 **How event schemas evolve**, so that old events stay readable forever:
 - **A released event type is never edited.** Adding an optional field with
@@ -191,7 +194,7 @@ should the owner one day decide to amend that constraint.
   same data means the same thing on any machine.
 - **Payloads are plain JSON**, readable by Postgres (`jsonb`) as well as
   SQLite.
-- **No SQLite-specific logic outside the Room adapter**: the domain and
+- **No SQLite-specific logic outside the SQLite adapter**: the domain and
   application layers only know the `EventStore` port.
 - **The sync cursor is per device**: "the events of phone X after its
   sequence number N". The same exchange works with a phone or a server.
@@ -213,20 +216,24 @@ inwards**: the domain knows nothing about Android, the database, the
 network or AI.
 
 ```
-app (Compose UI, ViewModels)
+androidApp (Android entry point, notifications, composition root)
         |
-infrastructure (Room event store, projections, LAN sync,
-        |       Nano and Gemma interpreters, clock, ids)
-        |       implements the ports below
-application (commands and queries = use cases, ports:
-        |    EventStore, Clock, IdGenerator, Interpreter, SyncTransport)
+ui (Compose Multiplatform screens)    infrastructure (SQLite event store,
+        |                              |  rule interpreter, system clock;
+        |                              |  later LAN sync, Nano and Gemma)
+        |                              |  implements the ports below
+application (commands and queries = use cases, the read state, ports:
+        |    EventStore, Clock, IdGenerator, Interpreter)
         |
 domain (pure Kotlin: aggregates, value objects, domain events, rules)
 ```
 
 **One Gradle module per layer** (`:domain`, `:application`,
-`:infrastructure`, `:app`). That way the compiler enforces the dependency
-rule: `:domain` cannot import Android, because it does not depend on it.
+`:infrastructure`, `:ui`, `:androidApp`). The compiler enforces most of the
+dependency rule: `:domain` cannot import Android, because it does not
+depend on it. `ArchitectureTest` checks the rest: common code stays
+portable, only `infrastructure` reads the system clock, and each context
+uses only the contexts it is allowed to.
 
 **Bounded contexts.** Each is a package in every layer and owns its own
 events and language. A context talks to another only through its
@@ -253,7 +260,7 @@ an MCP server later. Today its implementation is `LocalMealServer`.
 
 **Ports and adapters.** Everything outside the domain sits behind an
 interface defined by the application: storage, time, ids, interpreters,
-sync. Swapping Room for something else, or the rules for Nano, changes one
+sync. Swapping SQLite for something else, or the rules for Nano, changes one
 adapter and nothing else.
 
 **Testing:**
@@ -279,7 +286,7 @@ Three screens:
 
 Plus **the evening reminder**, since the whole app depends on meals being
 logged:
-- **When:** at a time the user picks (21:00 by default), and only if no
+- **When:** at 21:00 (choosing the time comes later), and only if no
   dinner was logged that evening. There is no reminder during absences,
   and none on a day marked "eating out".
 - **Answer in the notification**, without opening the app:
@@ -348,10 +355,33 @@ be added later with no migration.
 
 ## Technology
 
-Native Android: Kotlin, Jetpack Compose, Room (SQLite) as the event store
-and projection cache, kotlinx.serialization for event payloads, Gradle
-modules per layer. The domain and the `RuleInterpreter` are plain Kotlin
-with unit tests on the JVM.
-Sync and the AI interpreters come later; a first test will measure Nano
-and Gemma on real phones (speed, quality on pasted recipes and everyday
-sentences).
+**Kotlin Multiplatform**, Android first, iOS possible later:
+- The domain, the application, the infrastructure and the screens are
+  written in `commonMain` source sets, so they can compile for iOS one day.
+- No iOS target is built for now, locally or in CI (owner's decision).
+  `ArchitectureTest` keeps common code free of JVM and Android APIs in the
+  meantime.
+- On iOS, only the platform adapters would be written again: notifications,
+  and the on-device AI (Apple's Foundation Models behind the same
+  `Interpreter` port).
+
+Libraries:
+- **Compose Multiplatform** (Material 3) for the screens, with its
+  resources for the English and French strings;
+- **androidx.sqlite** with its bundled SQLite driver for the event store;
+- **kotlinx-datetime**, **kotlinx-coroutines** and
+  **kotlinx-serialization** (JSON payloads, written by hand-coded codecs);
+- **WorkManager** for the evening reminder.
+
+Checks:
+- ktlint;
+- `kotlin.test` on the JVM;
+- Android lint, with a missing French string as an error;
+- scripts in `tools/lint/` for translations, doc paths and the APK's
+  permissions.
+
+All of them run through `tools/check.sh`.
+
+Sync and the AI interpreters come later. A first test will measure Nano and
+Gemma on real phones: speed, and quality on pasted recipes and everyday
+sentences.

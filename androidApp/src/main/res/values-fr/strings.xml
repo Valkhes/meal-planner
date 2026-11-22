@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meal Planner</string>
+    <string name="reminder_channel_name">Rappel du soir</string>
+    <string name="reminder_channel_description">Demande ce que vous avez mangé, seulement les soirs où rien n\'a été noté.</string>
+    <string name="reminder_title">Qu\'avez-vous mangé ce soir ?</string>
+    <string name="reminder_text">Touchez un plat, ou tapez-le.</string>
+    <string name="reminder_other">Autre…</string>
+    <string name="reminder_reply_hint">Par exemple : restes de curry</string>
+    <string name="reminder_not_home">Pas à la maison</string>
+    <string name="reminder_logged">Noté : %1$s</string>
+    <string name="reminder_not_understood">Je n\'ai pas compris. Touchez pour ouvrir l\'app.</string>
+</resources>

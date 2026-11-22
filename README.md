@@ -138,6 +138,36 @@ Whatever the interpreter, the engine decides (frequencies, rhythms, time)
 and the interpreter only understands and explains. An AI interpreter talks
 to the engine through the same commands as the UI, which are its tools.
 
+### Ready for an online database, if ever needed
+
+Today everything stays on the phone (constraint 1). The design still makes
+an online database a matter of **adding an adapter, not a rewrite**,
+should the owner one day decide to amend that constraint.
+
+**Rules kept from day one**, so the local data needs nothing to go online:
+- **Ids are generated on the phone** (UUIDv7), never auto-incremented by
+  the database: no id clashes when several stores meet.
+- **Every event carries its `householdId` and `deviceId`**, so the same
+  table can hold many households and phones.
+- **Times are stored in UTC, with the user's time zone kept apart**, so the
+  same data means the same thing on any machine.
+- **Payloads are plain JSON**, readable by Postgres (`jsonb`) as well as
+  SQLite.
+- **No SQLite-specific logic outside the Room adapter**: the domain and
+  application layers only know the `EventStore` port.
+- **The sync cursor is per device**: "the events of phone X after its
+  sequence number N". The same exchange works with a phone or a server.
+
+**What going online would add:**
+1. A `RemoteEventStore` adapter, or an online **sync peer** that stores
+   events and speaks the same sync protocol as a phone. An append-only
+   events table maps directly to Postgres (Neon or Supabase).
+2. **End-to-end encryption with the household key**, which already exists
+   for local sync. The server would only see ciphertext and envelopes, so
+   meals and recipes would still never leave the phone in readable form.
+3. Nothing else: projections, rules, the UI and the interpreters stay as
+   they are. The phone keeps its full local copy and keeps working offline.
+
 ## Architecture
 
 Clean Architecture with domain-driven design. **Dependencies only point

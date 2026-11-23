@@ -32,4 +32,6 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.work.runtime)
     implementation(libs.datetime)
+    testImplementation(kotlin("test-junit"))
+    testImplementation(libs.coroutines.test)
 }

@@ -30,6 +30,17 @@ class MainActivity : ComponentActivity() {
         askForNotificationsOnce()
     }
 
+    override fun onStart() {
+        super.onStart()
+        // The phone is visible to the other one only while the app is on screen.
+        (application as MealPlannerApplication).container.sync.start()
+    }
+
+    override fun onStop() {
+        (application as MealPlannerApplication).container.sync.stop()
+        super.onStop()
+    }
+
     /** The evening reminder needs it from Android 13. Asked once; the user can change it in settings. */
     private fun askForNotificationsOnce() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return

@@ -36,6 +36,7 @@ import dev.valkhes.mealplanner.ui.common.dateText
 import dev.valkhes.mealplanner.ui.common.errorText
 import dev.valkhes.mealplanner.ui.common.timeText
 import dev.valkhes.mealplanner.ui.generated.*
+import dev.valkhes.mealplanner.ui.sync.SyncSection
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -58,6 +59,7 @@ fun SettingsScreen(dependencies: AppDependencies) {
 
     LazyColumn(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text(stringResource(Res.string.tab_settings), style = MaterialTheme.typography.headlineSmall) }
+        dependencies.sync?.let { controls -> item { SyncSection(controls) } }
         dependencies.reminder?.let { controls -> item { ReminderSection(controls) } }
         item { Text(stringResource(Res.string.absences_title), style = MaterialTheme.typography.titleMedium) }
         if (absences.isEmpty()) item { Text(stringResource(Res.string.absences_empty)) }

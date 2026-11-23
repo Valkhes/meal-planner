@@ -52,4 +52,4 @@ suspend fun openServer(
     store: InMemoryEventStore = InMemoryEventStore(),
     clock: FakeClock = FakeClock(),
     ids: IdGenerator = SequentialIds(),
-): LocalMealServer = LocalMealServer.open(store, clock, ids, DEVICE)
+): LocalMealServer = LocalMealServer.open(store, clock, ids, device = { DEVICE })

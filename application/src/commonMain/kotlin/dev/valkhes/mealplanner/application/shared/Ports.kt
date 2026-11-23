@@ -21,8 +21,16 @@ fun interface IdGenerator {
     fun newId(): String
 }
 
-/** Which household and which phone write the events. Created once, at first launch. */
+/** Which household and which phone write the events. */
 data class Device(
     val householdId: String,
     val deviceId: String,
 )
+
+/**
+ * The phone's identity, read at each write: the household changes when this phone joins the other
+ * phone's household, the phone id never does.
+ */
+fun interface DeviceIdentity {
+    fun current(): Device
+}

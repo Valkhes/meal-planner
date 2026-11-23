@@ -25,6 +25,7 @@ import dev.valkhes.mealplanner.ui.dishes.DishesScreen
 import dev.valkhes.mealplanner.ui.generated.*
 import dev.valkhes.mealplanner.ui.home.HomeScreen
 import dev.valkhes.mealplanner.ui.settings.SettingsScreen
+import dev.valkhes.mealplanner.ui.sync.SyncControls
 import org.jetbrains.compose.resources.stringResource
 
 /** What the screens need. The UI reads and sends through [server] only (README, "Architecture"). */
@@ -34,6 +35,8 @@ class AppDependencies(
     val clock: Clock,
     /** The evening reminder's settings, where the platform has one. */
     val reminder: ReminderControls?,
+    /** The sync with the other phone, where the platform has one. */
+    val sync: SyncControls?,
 )
 
 /** The evening reminder is a setting of this phone, not household data: it is not an event. */

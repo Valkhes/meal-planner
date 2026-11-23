@@ -121,4 +121,20 @@
 
     <string name="error_absence_invalid">Check the dates: the end must be after the start, within a year.</string>
     <string name="error_absence_unknown">That absence no longer exists.</string>
+    <string name="sync_title">Sync with the other phone</string>
+    <string name="sync_explain">Both phones on the same Wi-Fi, with the app open on both. Nothing goes through the internet.</string>
+    <string name="sync_now">Sync now</string>
+    <string name="sync_working">Looking for the other phone…</string>
+    <string name="sync_done">Synced: %1$d sent, %2$d received.</string>
+    <string name="sync_paired">The two phones are paired. From now on, "Sync now" is enough.</string>
+    <string name="sync_not_paired">Pair the two phones once: invite on one, type the code on the other.</string>
+    <string name="sync_pair_again">To pair with another phone, invite it or type its code.</string>
+    <string name="sync_invite">Invite the other phone</string>
+    <string name="sync_invite_code">Type this code on the other phone, within 5 minutes:</string>
+    <string name="sync_join_label">Code shown on the other phone</string>
+    <string name="sync_join">Join</string>
+    <string name="sync_failed_no_phone">The other phone was not found. Is the app open on it, on the same Wi-Fi?</string>
+    <string name="sync_failed_not_authenticated">Wrong code, or a phone of another household.</string>
+    <string name="sync_failed_other_version">The other phone has another version of the app: update both.</string>
+    <string name="sync_failed_connection">The connection was lost. Try again.</string>
 </resources>

@@ -65,7 +65,7 @@ class SyncTest {
         clock: FakeClock,
     ): Pair<LocalMealServer, InMemoryEventStore> {
         val store = InMemoryEventStore()
-        return LocalMealServer.open(store, clock, PrefixedIds(name), Device("household-1", name)) to store
+        return LocalMealServer.open(store, clock, PrefixedIds(name), device = { Device("household-1", name) }) to store
     }
 
     @Test
@@ -120,6 +120,23 @@ class SyncTest {
                     .single()
                     .habit.count,
             )
+        }
+
+    @Test
+    fun two_different_dinners_on_the_same_evening_both_count() =
+        runTest {
+            // Not eating together: each logs their own dinner, and both meals count after a sync.
+            val clock = FakeClock()
+            val (mine, _) = phone("a", clock)
+            val (hers, _) = phone("b", clock)
+            mine.send(LogMeal(DishRef.Named("Curry"), day, MealSlot.DINNER))
+            hers.send(LogMeal(DishRef.Named("Salad"), day, MealSlot.DINNER))
+            syncBoth(mine, hers)
+            for (phone in listOf(mine, hers)) {
+                assertEquals(listOf("Curry", "Salad"), phone.dishes().map { it.dish.name.text }.sorted())
+                assertEquals(listOf(1, 1), phone.dishes().map { it.habit.count })
+                assertEquals(2, phone.recentMeals(10).size)
+            }
         }
 
     @Test

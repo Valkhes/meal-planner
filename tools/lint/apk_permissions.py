@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Nothing leaves the phone (README, constraint 1): the built APK must not ask for network access.
+"""Nothing leaves the phone (README, constraint 1): the built APK asks only for reviewed permissions.
 
-Reads the permissions of the debug APK with aapt2 and fails on INTERNET, or on any permission not
-in ALLOWED, so a new dependency cannot add one unnoticed.
+Reads the permissions of the debug APK with aapt2 and fails on any permission not in ALLOWED, so a
+new dependency cannot add one unnoticed. Adding one is the owner's decision.
 """
 import os
 import pathlib
@@ -15,7 +15,11 @@ APK = ROOT / "androidApp/build/outputs/apk/debug/androidApp-debug.apk"
 # Reviewed: the evening reminder (POST_NOTIFICATIONS) and what WorkManager needs to schedule it
 # (WAKE_LOCK, RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE; ACCESS_NETWORK_STATE only reads whether a
 # network is up, for work constraints this app does not use). None of them can send data.
+# INTERNET: the sync with the other phone on the local network only (owner, 2026-11-23). Android
+# needs it for any socket; the code confines it to private addresses (ArchitectureTest checks that
+# only the sync package opens sockets).
 ALLOWED = {
+    "android.permission.INTERNET",
     "android.permission.POST_NOTIFICATIONS",
     "android.permission.WAKE_LOCK",
     "android.permission.RECEIVE_BOOT_COMPLETED",

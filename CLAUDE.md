@@ -43,15 +43,17 @@ in the message. The owner allows pushing straight to `main`.
   freely: no migration.
 - Time comes from `Clock`, ids and randomness from `IdGenerator`: only `infrastructure` reads the
   system.
-- Bounded contexts (`journal`, `cookbook`, `habits`, `assistant`, plus `events`, `server`,
+- Bounded contexts (`journal`, `cookbook`, `habits`, `planning`, `sync`, `assistant`, plus `events`, `server`,
   `shared`) use only what `ALLOWED` in `ArchitectureTest` lists. A new edge is a design decision:
   say so to the owner. New context: skill `new-context`.
 - If `ArchitectureTest` fails, fix the dependency; don't loosen the test.
 
 ## Product rules (README, constraints)
-- Nothing leaves the phone: no INTERNET permission, no analytics, crash reporting, Firebase or any
-  library that calls home. `tools/lint/apk_permissions.py` fails on a new permission; adding one
-  to its list is the owner's decision.
+- Nothing leaves the phone: no analytics, crash reporting, Firebase or any library that calls home.
+  The INTERNET permission exists only for the sync on the local network: only
+  `androidApp/src/main/kotlin/dev/valkhes/mealplanner/sync/` may use the network, and only private
+  addresses (`ArchitectureTest`). `tools/lint/apk_permissions.py` fails on a new permission; adding
+  one to its list is the owner's decision.
 - No tracking chores: the only input is "we ate this dish". No inventory, no streaks, no nagging;
   the evening reminder is the only nudge.
 - The app works fully without AI; an interpreter only proposes, the user confirms.

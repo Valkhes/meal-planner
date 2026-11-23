@@ -19,14 +19,18 @@ everything (CI runs it on every push).
    analytics, no crash reporting, no third-party library that calls home.
    In practice:
    - no Google, Firebase or analytics SDK;
-   - network traffic limited to local network addresses;
+   - network traffic limited to local network addresses. Android needs the
+     `INTERNET` permission for any socket, so the app has it, for the sync
+     only (owner, 2026-11-23). The sync code accepts and dials private and
+     link-local addresses only, and `ArchitectureTest` fails if any other
+     code uses the network;
    - Android Auto Backup disabled, since it would otherwise copy the app's
      data to the Google cloud;
    - data leaves the device only through an explicit export by the user.
 2. **Sync between two phones on the same local network only.** A
    "Synchronize" button runs it when both phones are on the same Wi-Fi.
-   Traffic is encrypted with a household key created once by pairing with
-   a QR code, and only phones of that household are accepted.
+   Traffic is encrypted with a household key shared once by pairing with a
+   typed code, and only phones of that household are accepted.
 3. **Shareable as is.** Anyone can install the APK. Each household is
    independent and nobody has anything to host.
 4. **No tracking chores.** The only input is "we ate this dish", in under
@@ -120,11 +124,38 @@ This also makes sync safe:
 
 ### Sync
 
-1. **Pairing, once:** one phone shows a QR code, the other scans it. They
-   now share a household id and an encryption key.
-2. **Sync:** with both phones on the same Wi-Fi, press "Synchronize". The
-   phones find each other on the local network, exchange the events the
-   other is missing, and merge.
+Everything below is in `androidApp/src/main/kotlin/dev/valkhes/mealplanner/sync/`,
+over the transport-free protocol of
+`application/src/commonMain/kotlin/dev/valkhes/mealplanner/application/sync/SyncProtocol.kt`.
+
+1. **Visible only when open.** While the app is on screen, the phone
+   listens on a random port and announces itself on the local network with
+   mDNS. The announcement carries a tag derived from the household key, which
+   reveals nothing about the key itself.
+2. **Pairing, once.** In Settings, one phone shows a 10-character code
+   (about 50 bits, valid 5 minutes), and the other types it. Both stretch
+   the code with PBKDF2 and prove they know it without sending it. The
+   inviting phone then hands over its household id and key, encrypted. The
+   joining phone keeps its own events, which arrive on the first sync.
+3. **Sync.** With both phones on the same Wi-Fi and the app open on both,
+   press "Sync now":
+   - the phone finds the other one of its household;
+   - each proves it holds the household key (HMAC over fresh nonces from
+     both sides, so a recorded session cannot be replayed);
+   - they exchange the events the other is missing, in frames sealed with
+     AES-GCM under a session key;
+   - both merge.
+
+   Only private and link-local addresses are ever accepted or dialled.
+4. **What merging means:**
+   - each phone ends with the union of both logs, replayed in recorded
+     order;
+   - the same dish on the same day at the same meal counts once (eaten
+     together, logged twice);
+   - two different dishes logged the same evening both count (each ate
+     their own);
+   - the latest recipe edit wins;
+   - events from a newer app are passed on untouched.
 3. **Fallback:** the shopping list can be sent as plain text through the
    Android share menu, for when one person is at the store and the other at
    home.
@@ -321,15 +352,11 @@ be added later with no migration.
   in the rhythms, and there is no reminder on those days.
 - **The evening reminder's settings**: on or off, and its time in steps
   of 15 minutes. These are settings of the phone, not household data.
+- **Sync between two phones** on the local network, with pairing by a
+  typed code (see "Sync" above). It still needs a test on two real phones.
 
 ### Next, in order
 
-- **Sync between two phones.** The protocol and the merge are built and
-  tested (`application/src/commonMain/kotlin/dev/valkhes/mealplanner/application/sync/SyncProtocol.kt`,
-  `LocalMealServer.sync`). Each phone sends the ids it has, then the events
-  the other lacks. Both end with the union, replayed in recorded order, and
-  syncing twice changes nothing. What remains is the transport, the pairing
-  and the encryption: see "Open decisions".
 - **Leftovers** ("lasagne left from yesterday, 0 min") at the top of
   "Tonight".
 - **Learned patterns for "Tonight"**: weekdays ("pizza on Fridays") and
@@ -353,20 +380,6 @@ be added later with no migration.
   30 min" by calling the engine.
 
 ## Open decisions
-
-- **How the two phones talk.** On Android, any socket, even to a phone on
-  the same Wi-Fi, needs the `INTERNET` permission, which constraint 1 and
-  the APK check rule out today. The options:
-  - allow `INTERNET`, and confine it in code to private addresses on the
-    local network, with a check that only the sync adapter opens sockets;
-  - Bluetooth, which needs no `INTERNET` and works without Wi-Fi, but asks
-    for the Bluetooth permissions;
-  - a file sent from phone to phone (Android share menu, Nearby Share), with
-    no permission at all, but with a manual step.
-
-  Pairing has the same kind of trade-off: scanning a QR code needs the
-  camera permission and a scanner library (ZXing works offline), while
-  typing a short code needs neither.
 
 - **Importing a recipe from a link.** Most recipe sites embed a
   machine-readable recipe (schema.org/Recipe), so a link could be imported

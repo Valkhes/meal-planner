@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  No INTERNET permission, on purpose: nothing leaves the phone (README, constraint 1).
-  tools/check.sh fails if the built APK asks for it.
+  INTERNET only for the sync with the other phone on the local network (owner, 2026-11-23): on
+  Android any socket needs it. The code only accepts and dials private addresses (sync/LocalNetwork.kt)
+  and no other package may open a socket (ArchitectureTest). Nothing leaves the phone otherwise
+  (README, constraint 1); tools/lint/apk_permissions.py fails on any other permission.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application

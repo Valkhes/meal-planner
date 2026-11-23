@@ -116,6 +116,24 @@ class ArchitectureTest {
         check(violations, "user-facing text must come from composeResources strings:")
     }
 
+    /**
+     * The INTERNET permission exists only for the sync on the local network (README, constraint 1):
+     * no code outside the sync package may open a connection, and no HTTP library may come in.
+     */
+    @Test
+    fun only_the_sync_package_opens_network_connections() {
+        val network = listOf("java.net.", "javax.net.", "android.net.", "okhttp3.", "io.ktor.", "retrofit2.", "com.google.firebase.")
+        val syncDir = File(root, "androidApp/src/main/kotlin/dev/valkhes/mealplanner/sync")
+        val files = listOf("domain", "application", "infrastructure", "ui").flatMap { sources(it, "commonMain") } + sources("androidApp", "main")
+        val violations =
+            files.filterNot { it.startsWith(syncDir) }.flatMap { file ->
+                imports(file).filter { imp -> network.any(imp::startsWith) }.map { "${file.relativeTo(root)}: $it" }
+            }
+        check(violations, "only androidApp's sync package may use the network:")
+        val dependencies = File(root, "gradle/libs.versions.toml").readText()
+        check(listOf("okhttp", "ktor", "retrofit", "firebase").filter { dependencies.contains(it) }, "no HTTP or tracking library:")
+    }
+
     private fun contextOf(name: String): String? = Regex("""^dev\.valkhes\.mealplanner\.(?:domain|application)\.([a-z]+)""").find(name)?.groupValues?.get(1)
 
     private companion object {

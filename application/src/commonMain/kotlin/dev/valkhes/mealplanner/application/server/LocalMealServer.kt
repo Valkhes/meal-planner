@@ -11,7 +11,7 @@ import dev.valkhes.mealplanner.application.habits.MealEntry
 import dev.valkhes.mealplanner.application.habits.Tonight
 import dev.valkhes.mealplanner.application.habits.TonightView
 import dev.valkhes.mealplanner.application.shared.Clock
-import dev.valkhes.mealplanner.application.shared.Device
+import dev.valkhes.mealplanner.application.shared.DeviceIdentity
 import dev.valkhes.mealplanner.application.shared.IdGenerator
 import dev.valkhes.mealplanner.application.shared.today
 import dev.valkhes.mealplanner.application.sync.SyncChannel
@@ -48,7 +48,7 @@ class LocalMealServer private constructor(
     private val schema: EventSchema,
     private val clock: Clock,
     private val ids: IdGenerator,
-    private val device: Device,
+    private val device: DeviceIdentity,
     private var state: MealState,
 ) : MealServer {
     private val mutex = Mutex()
@@ -88,7 +88,7 @@ class LocalMealServer private constructor(
      */
     suspend fun sync(channel: SyncChannel): SyncReport {
         val mine = mutex.withLock { store.all() }
-        channel.send(SyncMessage.Hello(SyncCodec.PROTOCOL, device.deviceId, mine.mapTo(HashSet()) { it.id }))
+        channel.send(SyncMessage.Hello(SyncCodec.PROTOCOL, device.current().deviceId, mine.mapTo(HashSet()) { it.id }))
         val hello = channel.receive() as? SyncMessage.Hello ?: throw IllegalStateException("expected the other phone's hello")
         if (hello.protocol != SyncCodec.PROTOCOL) throw SyncProtocolMismatch(hello.protocol)
         val missing = mine.filter { it.id !in hello.ids }
@@ -178,6 +178,7 @@ class LocalMealServer private constructor(
     private suspend fun record(events: List<DomainEvent>) {
         val now = clock.now()
         val zone = clock.timeZone()
+        val writer = device.current()
         val envelopes =
             events.map { event ->
                 val (type, payload) = schema.encode(event)
@@ -185,8 +186,8 @@ class LocalMealServer private constructor(
                     id = ids.newId(),
                     type = type.name,
                     version = type.version,
-                    householdId = device.householdId,
-                    deviceId = device.deviceId,
+                    householdId = writer.householdId,
+                    deviceId = writer.deviceId,
                     occurredAt = occurredAt(event, now, zone),
                     timeZone = zone.id,
                     recordedAt = now,
@@ -244,7 +245,7 @@ class LocalMealServer private constructor(
             store: EventStore,
             clock: Clock,
             ids: IdGenerator,
-            device: Device,
+            device: DeviceIdentity,
             schema: EventSchema = EventSchema.CURRENT,
         ): LocalMealServer = LocalMealServer(store, schema, clock, ids, device, replay(store.all(), schema))
 

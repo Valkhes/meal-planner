@@ -121,4 +121,20 @@
 
     <string name="error_absence_invalid">Vérifiez les dates : la fin doit être après le début, dans l\'année.</string>
     <string name="error_absence_unknown">Cette absence n\'existe plus.</string>
+    <string name="sync_title">Synchroniser avec l\'autre téléphone</string>
+    <string name="sync_explain">Les deux téléphones sur le même Wi-Fi, l\'app ouverte sur les deux. Rien ne passe par internet.</string>
+    <string name="sync_now">Synchroniser</string>
+    <string name="sync_working">Recherche de l\'autre téléphone…</string>
+    <string name="sync_done">Synchronisé : %1$d envoyés, %2$d reçus.</string>
+    <string name="sync_paired">Les deux téléphones sont appairés. Désormais, « Synchroniser » suffit.</string>
+    <string name="sync_not_paired">Appairez les deux téléphones une fois : invitez sur l\'un, tapez le code sur l\'autre.</string>
+    <string name="sync_pair_again">Pour appairer un autre téléphone, invitez-le ou tapez son code.</string>
+    <string name="sync_invite">Inviter l\'autre téléphone</string>
+    <string name="sync_invite_code">Tapez ce code sur l\'autre téléphone, dans les 5 minutes :</string>
+    <string name="sync_join_label">Code affiché sur l\'autre téléphone</string>
+    <string name="sync_join">Rejoindre</string>
+    <string name="sync_failed_no_phone">L\'autre téléphone est introuvable. L\'app y est-elle ouverte, sur le même Wi-Fi ?</string>
+    <string name="sync_failed_not_authenticated">Code erroné, ou téléphone d\'un autre foyer.</string>
+    <string name="sync_failed_other_version">L\'autre téléphone a une autre version de l\'app : mettez les deux à jour.</string>
+    <string name="sync_failed_connection">La connexion a été perdue. Réessayez.</string>
 </resources>

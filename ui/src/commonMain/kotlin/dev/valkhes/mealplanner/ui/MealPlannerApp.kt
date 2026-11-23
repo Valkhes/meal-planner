@@ -24,6 +24,7 @@ import dev.valkhes.mealplanner.ui.dish.DishScreen
 import dev.valkhes.mealplanner.ui.dishes.DishesScreen
 import dev.valkhes.mealplanner.ui.generated.*
 import dev.valkhes.mealplanner.ui.home.HomeScreen
+import dev.valkhes.mealplanner.ui.settings.SettingsScreen
 import org.jetbrains.compose.resources.stringResource
 
 /** What the screens need. The UI reads and sends through [server] only (README, "Architecture"). */
@@ -31,12 +32,29 @@ class AppDependencies(
     val server: MealServer,
     val interpreter: Interpreter,
     val clock: Clock,
+    /** The evening reminder's settings, where the platform has one. */
+    val reminder: ReminderControls?,
 )
+
+/** The evening reminder is a setting of this phone, not household data: it is not an event. */
+data class ReminderSetting(
+    val enabled: Boolean,
+    val hour: Int,
+    val minute: Int,
+)
+
+interface ReminderControls {
+    fun current(): ReminderSetting
+
+    fun update(setting: ReminderSetting)
+}
 
 sealed interface Screen {
     data object Home : Screen
 
     data object Dishes : Screen
+
+    data object Settings : Screen
 
     data class Dish(
         val id: DishId,
@@ -59,7 +77,7 @@ class Navigator {
         screen =
             when (current) {
                 is Screen.Dish -> current.from
-                Screen.Dishes -> Screen.Home
+                Screen.Dishes, Screen.Settings -> Screen.Home
                 Screen.Home -> return false
             }
         return true
@@ -82,10 +100,16 @@ fun MealPlannerApp(
                         label = { Text(stringResource(Res.string.tab_home)) },
                     )
                     NavigationBarItem(
-                        selected = navigator.screen != Screen.Home,
+                        selected = navigator.screen == Screen.Dishes || navigator.screen is Screen.Dish,
                         onClick = { navigator.open(Screen.Dishes) },
                         icon = { Text("☰") },
                         label = { Text(stringResource(Res.string.tab_dishes)) },
+                    )
+                    NavigationBarItem(
+                        selected = navigator.screen == Screen.Settings,
+                        onClick = { navigator.open(Screen.Settings) },
+                        icon = { Text("⚙") },
+                        label = { Text(stringResource(Res.string.tab_settings)) },
                     )
                 }
             },
@@ -95,6 +119,7 @@ fun MealPlannerApp(
                     Screen.Home -> HomeScreen(dependencies) { navigator.open(Screen.Dish(it, Screen.Home)) }
                     Screen.Dishes -> DishesScreen(dependencies) { navigator.open(Screen.Dish(it, Screen.Dishes)) }
                     is Screen.Dish -> DishScreen(dependencies, screen.id, onBack = { navigator.back() })
+                    Screen.Settings -> SettingsScreen(dependencies)
                 }
             }
         }

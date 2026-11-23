@@ -2,6 +2,7 @@ package dev.valkhes.mealplanner.application.server
 
 import dev.valkhes.mealplanner.domain.cookbook.Recipe
 import dev.valkhes.mealplanner.domain.journal.MealSlot
+import dev.valkhes.mealplanner.domain.planning.AbsenceId
 import dev.valkhes.mealplanner.domain.shared.DishId
 import dev.valkhes.mealplanner.domain.shared.DomainError
 import dev.valkhes.mealplanner.domain.shared.MealId
@@ -49,11 +50,22 @@ data class EditRecipe(
     val recipe: Recipe,
 ) : Command
 
+/** The household is away from [from] to [to], both included: no reminder, and the rhythm skips those days. */
+data class SetAbsence(
+    val from: LocalDate,
+    val to: LocalDate,
+) : Command
+
+data class RemoveAbsence(
+    val absenceId: AbsenceId,
+) : Command
+
 sealed interface CommandResult {
     /** What the command created or touched, so the UI can show or undo it. */
     data class Done(
         val dishId: DishId? = null,
         val mealId: MealId? = null,
+        val absenceId: AbsenceId? = null,
     ) : CommandResult
 
     data class Refused(

@@ -2,6 +2,7 @@ package dev.valkhes.mealplanner.application.events
 
 import dev.valkhes.mealplanner.application.cookbook.CookbookEvents
 import dev.valkhes.mealplanner.application.journal.JournalEvents
+import dev.valkhes.mealplanner.application.planning.PlanningEvents
 import dev.valkhes.mealplanner.domain.shared.DomainEvent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -63,6 +64,6 @@ class EventSchema(
     ): DomainEvent = type.decode(type.upcast(payload, version))
 
     companion object {
-        val CURRENT: EventSchema = EventSchema(JournalEvents.types + CookbookEvents.types)
+        val CURRENT: EventSchema = EventSchema(JournalEvents.types + CookbookEvents.types + PlanningEvents.types)
     }
 }

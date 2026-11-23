@@ -2,6 +2,7 @@ package dev.valkhes.mealplanner.application.assistant
 
 import dev.valkhes.mealplanner.application.server.DishRef
 import dev.valkhes.mealplanner.application.server.LogMeal
+import dev.valkhes.mealplanner.application.server.SetAbsence
 import dev.valkhes.mealplanner.domain.cookbook.Dish
 import dev.valkhes.mealplanner.domain.cookbook.Recipe
 import dev.valkhes.mealplanner.domain.journal.MealSlot
@@ -43,6 +44,14 @@ sealed interface Interpretation {
         val dishId: DishId?,
         val recipe: Recipe,
     ) : Interpretation
+
+    /** Days away: "on part du 3 au 10", "away from the 28th to the 2nd". */
+    data class Absence(
+        val from: LocalDate,
+        val to: LocalDate,
+    ) : Interpretation {
+        fun toCommand(): SetAbsence = SetAbsence(from, to)
+    }
 
     data object NotUnderstood : Interpretation
 }

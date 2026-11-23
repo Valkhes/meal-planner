@@ -18,7 +18,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 class LocalMealServerTest {
@@ -109,28 +108,6 @@ class LocalMealServerTest {
             val before = store.envelopes.size
             assertIs<CommandResult.Done>(server.send(EditRecipe(id, recipe)))
             assertEquals(before, store.envelopes.size)
-        }
-
-    @Test
-    fun suggestions_put_the_most_overdue_dish_first_and_skip_today() =
-        runTest {
-            val clock = FakeClock()
-            val server = openServer(clock = clock)
-            val today = LocalDate(2026, 11, 20)
-            // Curry every 10 days, last 12 days ago: overdue. Pasta every 3 days, last 2 days ago: not yet.
-            for (d in listOf(19, 29)) server.send(LogMeal(DishRef.Named("Curry"), LocalDate(2026, 10, d), MealSlot.DINNER))
-            server.send(LogMeal(DishRef.Named("Curry"), LocalDate(2026, 11, 8), MealSlot.DINNER))
-            for (d in listOf(12, 15, 18)) server.send(LogMeal(DishRef.Named("Pasta"), LocalDate(2026, 11, d), MealSlot.DINNER))
-            server.send(LogMeal(DishRef.Named("Soup"), today, MealSlot.LUNCH))
-            assertEquals(listOf("Curry", "Pasta"), server.suggestions(5).map { it.dish.name.text })
-            clock.advance(30.days)
-            assertEquals(
-                "Pasta",
-                server
-                    .suggestions(5)
-                    .first()
-                    .dish.name.text,
-            )
         }
 
     @Test

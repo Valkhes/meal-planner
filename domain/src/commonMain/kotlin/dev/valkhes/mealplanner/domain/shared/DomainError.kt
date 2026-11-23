@@ -11,6 +11,8 @@ enum class DomainError(
     MEAL_UNKNOWN("meal_unknown"),
     MEAL_ALREADY_RETRACTED("meal_already_retracted"),
     RECIPE_INVALID("recipe_invalid"),
+    ABSENCE_INVALID("absence_invalid"),
+    ABSENCE_UNKNOWN("absence_unknown"),
 }
 
 /** The result of a decision: the events to record, or why nothing happens. */

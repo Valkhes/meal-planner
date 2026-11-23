@@ -10,6 +10,7 @@ import dev.valkhes.mealplanner.application.shared.UuidV7
 import dev.valkhes.mealplanner.infrastructure.assistant.RuleInterpreter
 import dev.valkhes.mealplanner.infrastructure.storage.SqliteEventStore
 import dev.valkhes.mealplanner.infrastructure.system.SystemClock
+import dev.valkhes.mealplanner.reminder.ReminderPreferences
 import dev.valkhes.mealplanner.ui.AppDependencies
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -24,6 +25,7 @@ class AppContainer(
 ) {
     val clock: Clock = SystemClock
     val interpreter: Interpreter = RuleInterpreter()
+    val reminder: ReminderPreferences = ReminderPreferences(context)
     private val ids = UuidV7(clock, SecureRandom().asKotlinRandom())
     private val mutex = Mutex()
     private var server: MealServer? = null
@@ -40,7 +42,7 @@ class AppContainer(
                 ).also { server = it }
         }
 
-    suspend fun dependencies(): AppDependencies = AppDependencies(server(), interpreter, clock)
+    suspend fun dependencies(): AppDependencies = AppDependencies(server(), interpreter, clock, reminder)
 
     /** The household and phone ids, created at first launch and kept in private preferences. */
     private fun device(): Device {

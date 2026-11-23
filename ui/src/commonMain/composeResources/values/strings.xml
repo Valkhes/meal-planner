@@ -90,4 +90,35 @@
     <string name="error_meal_unknown">That meal no longer exists.</string>
     <string name="error_meal_already_retracted">That meal was already removed.</string>
     <string name="error_recipe_invalid">Something in this recipe is not valid: check the time and the length of the lines.</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="tonight_title">Tonight</string>
+    <string name="tonight_any_time">Any time</string>
+    <string name="tonight_learning">Still learning: %1$d of %2$d meals logged. For now, here are the dishes you make most.</string>
+    <string name="tonight_empty">Log a few meals and suggestions will appear here.</string>
+    <string name="tonight_none_fit">Nothing you usually make fits in that time.</string>
+    <string name="tonight_away">You are away today.</string>
+    <plurals name="reason_since">
+        <item quantity="one">not made for %1$d day</item>
+        <item quantity="other">not made for %1$d days</item>
+    </plurals>
+
+    <string name="absence_proposal_title">Set this absence?</string>
+    <string name="absence_range">%1$s to %2$s</string>
+    <string name="absences_title">Absences</string>
+    <string name="absences_empty">No absence planned.</string>
+    <string name="absences_hint">You can also type "away from the 3rd to the 10th" on the home screen.</string>
+    <string name="absence_add">Add an absence</string>
+    <string name="absence_from">From</string>
+    <string name="absence_to">To</string>
+    <string name="action_remove">Remove</string>
+
+    <string name="settings_reminder_title">Evening reminder</string>
+    <string name="settings_reminder_enabled">Ask what we ate, on evenings when nothing was logged</string>
+    <string name="settings_reminder_time">Time: %1$s</string>
+    <string name="time_earlier">15 min earlier</string>
+    <string name="time_later">15 min later</string>
+
+    <string name="error_absence_invalid">Check the dates: the end must be after the start, within a year.</string>
+    <string name="error_absence_unknown">That absence no longer exists.</string>
 </resources>

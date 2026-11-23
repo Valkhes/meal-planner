@@ -3,6 +3,8 @@ package dev.valkhes.mealplanner.application.server
 import dev.valkhes.mealplanner.application.habits.DishDetail
 import dev.valkhes.mealplanner.application.habits.DishSummary
 import dev.valkhes.mealplanner.application.habits.MealEntry
+import dev.valkhes.mealplanner.application.habits.Tonight
+import dev.valkhes.mealplanner.domain.planning.Absence
 import dev.valkhes.mealplanner.domain.shared.DishId
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.datetime.LocalDate
@@ -25,5 +27,11 @@ interface MealServer {
 
     suspend fun mealsOn(date: LocalDate): List<MealEntry>
 
-    suspend fun suggestions(limit: Int): List<DishSummary>
+    /** "What do we eat tonight?" with [availableMinutes] to cook (null: any time). */
+    suspend fun tonight(availableMinutes: Int?): Tonight
+
+    /** Absences not over yet, earliest first. */
+    suspend fun absences(): List<Absence>
+
+    suspend fun isAway(date: LocalDate): Boolean
 }

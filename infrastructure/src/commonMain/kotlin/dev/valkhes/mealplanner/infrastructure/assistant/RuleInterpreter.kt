@@ -13,11 +13,12 @@ import kotlinx.datetime.minus
 
 /**
  * The interpreter without AI, always there (README, "The input box"). It understands English and
- * French: a short sentence is a meal ("curry tonight", "hier midi des pâtes"), three lines or more
- * are a pasted recipe.
+ * French: a short sentence is days away ("on part du 3 au 10") or a meal ("curry tonight",
+ * "hier midi des pâtes"); three lines or more are a pasted recipe.
  */
 class RuleInterpreter : Interpreter {
     private val recipes = RecipeTextParser()
+    private val absences = AbsenceTextParser()
 
     override suspend fun interpret(
         text: String,
@@ -30,7 +31,9 @@ class RuleInterpreter : Interpreter {
             val dishId = parsed.title?.let { title -> matchDish(title, context.dishes, exactOnly = true) }
             return Interpretation.NewRecipe(parsed.title, dishId, parsed.recipe)
         }
-        return meal(lines.joinToString(" "), context)
+        val sentence = lines.joinToString(" ")
+        absences.parse(sentence, context.today)?.let { (from, to) -> return Interpretation.Absence(from, to) }
+        return meal(sentence, context)
     }
 
     private fun meal(

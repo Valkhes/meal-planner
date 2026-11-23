@@ -8,6 +8,8 @@ import dev.valkhes.mealplanner.application.habits.DishDetail
 import dev.valkhes.mealplanner.application.habits.DishSummary
 import dev.valkhes.mealplanner.application.habits.HabitViews
 import dev.valkhes.mealplanner.application.habits.MealEntry
+import dev.valkhes.mealplanner.application.habits.Tonight
+import dev.valkhes.mealplanner.application.habits.TonightView
 import dev.valkhes.mealplanner.application.shared.Clock
 import dev.valkhes.mealplanner.application.shared.Device
 import dev.valkhes.mealplanner.application.shared.IdGenerator
@@ -15,6 +17,9 @@ import dev.valkhes.mealplanner.application.shared.today
 import dev.valkhes.mealplanner.domain.cookbook.DishName
 import dev.valkhes.mealplanner.domain.journal.MealLogged
 import dev.valkhes.mealplanner.domain.journal.MealSlot
+import dev.valkhes.mealplanner.domain.planning.Absence
+import dev.valkhes.mealplanner.domain.planning.AbsenceId
+import dev.valkhes.mealplanner.domain.shared.DateRange
 import dev.valkhes.mealplanner.domain.shared.Decision
 import dev.valkhes.mealplanner.domain.shared.DishId
 import dev.valkhes.mealplanner.domain.shared.DomainError
@@ -57,15 +62,20 @@ class LocalMealServer private constructor(
             }
         }
 
-    override suspend fun dishes(): List<DishSummary> = read { HabitViews.summaries(it.cookbook, it.journal) }
+    override suspend fun dishes(): List<DishSummary> = read { HabitViews.summaries(it.cookbook, it.journal, it.planning.ranges) }
 
-    override suspend fun dish(id: DishId): DishDetail? = read { HabitViews.detail(it.cookbook, it.journal, id) }
+    override suspend fun dish(id: DishId): DishDetail? = read { HabitViews.detail(it.cookbook, it.journal, it.planning.ranges, id) }
 
     override suspend fun recentMeals(limit: Int): List<MealEntry> = read { HabitViews.meals(it.cookbook, it.journal).take(limit) }
 
     override suspend fun mealsOn(date: LocalDate): List<MealEntry> = read { s -> HabitViews.meals(s.cookbook, s.journal).filter { it.meal.date == date } }
 
-    override suspend fun suggestions(limit: Int): List<DishSummary> = read { HabitViews.suggestions(it.cookbook, it.journal, clock.today(), limit) }
+    override suspend fun tonight(availableMinutes: Int?): Tonight =
+        read { TonightView.of(it.cookbook, it.journal, it.planning.ranges, clock.today(), availableMinutes) }
+
+    override suspend fun absences(): List<Absence> = read { s -> s.planning.all.filter { it.days.endInclusive >= clock.today() } }
+
+    override suspend fun isAway(date: LocalDate): Boolean = read { it.planning.isAway(date) }
 
     private suspend fun <T> read(view: (MealState) -> T): T = mutex.withLock { view(state) }
 
@@ -79,6 +89,11 @@ class LocalMealServer private constructor(
                     Outcome.of(state.cookbook.rename(command.dishId, name), CommandResult.Done(dishId = command.dishId))
                 }
             is EditRecipe -> Outcome.of(state.cookbook.editRecipe(command.dishId, command.recipe), CommandResult.Done(dishId = command.dishId))
+            is SetAbsence -> {
+                val id = AbsenceId(ids.newId())
+                Outcome.of(state.planning.setAbsence(id, DateRange(command.from, command.to)), CommandResult.Done(absenceId = id))
+            }
+            is RemoveAbsence -> Outcome.of(state.planning.remove(command.absenceId), CommandResult.Done(absenceId = command.absenceId))
         }
 
     private fun logMeal(command: LogMeal): Outcome {

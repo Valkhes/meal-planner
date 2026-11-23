@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import dev.valkhes.mealplanner.application.assistant.InterpretContext
 import dev.valkhes.mealplanner.application.assistant.Interpretation
 import dev.valkhes.mealplanner.application.habits.MealEntry
+import dev.valkhes.mealplanner.application.habits.Tonight
+import dev.valkhes.mealplanner.application.habits.TonightSuggestion
+import dev.valkhes.mealplanner.application.habits.TonightView
 import dev.valkhes.mealplanner.application.server.CommandResult
 import dev.valkhes.mealplanner.application.server.CreateDish
 import dev.valkhes.mealplanner.application.server.EditRecipe
@@ -42,10 +45,12 @@ import dev.valkhes.mealplanner.domain.shared.DomainError
 import dev.valkhes.mealplanner.ui.AppDependencies
 import dev.valkhes.mealplanner.ui.common.dateText
 import dev.valkhes.mealplanner.ui.common.errorText
+import dev.valkhes.mealplanner.ui.common.reasonText
 import dev.valkhes.mealplanner.ui.common.slotText
 import dev.valkhes.mealplanner.ui.generated.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -65,9 +70,16 @@ fun HomeScreen(
     var proposal by remember { mutableStateOf<Interpretation?>(null) }
     var error by remember { mutableStateOf<DomainError?>(null) }
     var recent by remember { mutableStateOf<List<MealEntry>>(emptyList()) }
+    var minutes by rememberSaveable { mutableStateOf<Int?>(null) }
+    var tonight by remember { mutableStateOf<Tonight?>(null) }
+    var away by remember { mutableStateOf(false) }
     val today = dependencies.clock.today()
 
-    LaunchedEffect(revision) { recent = server.recentMeals(RECENT_MEALS) }
+    LaunchedEffect(revision) {
+        recent = server.recentMeals(RECENT_MEALS)
+        away = server.isAway(today)
+    }
+    LaunchedEffect(revision, minutes) { tonight = server.tonight(minutes) }
 
     fun submit() {
         if (text.isBlank()) return
@@ -98,6 +110,12 @@ fun HomeScreen(
             Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineSmall)
         }
         item {
+            TonightCard(tonight, minutes, away, onMinutes = { minutes = it }) { suggestion ->
+                proposal = Interpretation.Meal(suggestion.dish.name.text, suggestion.dish.id, today, MealSlot.DINNER)
+                error = null
+            }
+        }
+        item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = text,
@@ -125,6 +143,12 @@ fun HomeScreen(
                         }
                     }
                 }
+            is Interpretation.Absence ->
+                item {
+                    AbsenceProposal(current, today, error, onCancel = { proposal = null }) {
+                        scope.launch { done(server.send(current.toCommand())) }
+                    }
+                }
             Interpretation.NotUnderstood ->
                 item { Text(stringResource(Res.string.not_understood), color = MaterialTheme.colorScheme.error) }
             null -> Unit
@@ -148,10 +172,80 @@ fun HomeScreen(
     }
 }
 
+private val TIME_CHOICES: List<Int> = listOf(15, 30, 45)
+
+/** "What do we eat tonight?": how much time, then three dishes and why. A tap prepares the log. */
+@Composable
+private fun TonightCard(
+    tonight: Tonight?,
+    minutes: Int?,
+    away: Boolean,
+    onMinutes: (Int?) -> Unit,
+    onPick: (TonightSuggestion) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(Res.string.tonight_title), style = MaterialTheme.typography.titleMedium)
+            if (away) Text(stringResource(Res.string.tonight_away))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (choice in TIME_CHOICES) {
+                    FilterChip(
+                        selected = minutes == choice,
+                        onClick = { onMinutes(choice) },
+                        label = { Text(stringResource(Res.string.minutes_value, choice)) },
+                    )
+                }
+                FilterChip(selected = minutes == null, onClick = { onMinutes(null) }, label = { Text(stringResource(Res.string.tonight_any_time)) })
+            }
+            val current = tonight ?: return@Column
+            when {
+                current.mealsLogged == 0 -> Text(stringResource(Res.string.tonight_empty))
+                current.suggestions.isEmpty() -> Text(stringResource(Res.string.tonight_none_fit))
+                current.learning ->
+                    Text(
+                        stringResource(Res.string.tonight_learning, current.mealsLogged, TonightView.BREAK_IN_MEALS),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+            }
+            for (suggestion in current.suggestions) {
+                Column(Modifier.fillMaxWidth().clickable { onPick(suggestion) }.padding(vertical = 4.dp)) {
+                    Text(suggestion.dish.name.text, style = MaterialTheme.typography.bodyLarge)
+                    val time =
+                        suggestion.dish.recipe.minutes
+                            ?.let { " · " + stringResource(Res.string.minutes_value, it) }
+                            .orEmpty()
+                    Text(reasonText(suggestion.reason) + time, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AbsenceProposal(
+    proposal: Interpretation.Absence,
+    today: LocalDate,
+    error: DomainError?,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(Res.string.absence_proposal_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.absence_range, dateText(proposal.from, today), dateText(proposal.to, today)))
+            error?.let { Text(errorText(it), color = MaterialTheme.colorScheme.error) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onCancel) { Text(stringResource(Res.string.action_cancel)) }
+                Button(onClick = onSave) { Text(stringResource(Res.string.action_save)) }
+            }
+        }
+    }
+}
+
 @Composable
 private fun MealProposal(
     proposal: Interpretation.Meal,
-    today: kotlinx.datetime.LocalDate,
+    today: LocalDate,
     error: DomainError?,
     onCancel: () -> Unit,
     onSave: (Interpretation.Meal) -> Unit,

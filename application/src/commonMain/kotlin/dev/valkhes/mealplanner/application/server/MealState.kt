@@ -4,6 +4,8 @@ import dev.valkhes.mealplanner.domain.cookbook.Cookbook
 import dev.valkhes.mealplanner.domain.cookbook.CookbookEvent
 import dev.valkhes.mealplanner.domain.journal.Journal
 import dev.valkhes.mealplanner.domain.journal.JournalEvent
+import dev.valkhes.mealplanner.domain.planning.Planning
+import dev.valkhes.mealplanner.domain.planning.PlanningEvent
 import dev.valkhes.mealplanner.domain.shared.DomainEvent
 
 /**
@@ -13,15 +15,17 @@ import dev.valkhes.mealplanner.domain.shared.DomainEvent
 data class MealState(
     val cookbook: Cookbook,
     val journal: Journal,
+    val planning: Planning,
 ) {
     fun apply(event: DomainEvent): MealState =
         when (event) {
             is CookbookEvent -> copy(cookbook = cookbook.apply(event))
             is JournalEvent -> copy(journal = journal.apply(event))
+            is PlanningEvent -> copy(planning = planning.apply(event))
             else -> this
         }
 
     companion object {
-        val EMPTY: MealState = MealState(Cookbook.EMPTY, Journal.EMPTY)
+        val EMPTY: MealState = MealState(Cookbook.EMPTY, Journal.EMPTY, Planning.EMPTY)
     }
 }

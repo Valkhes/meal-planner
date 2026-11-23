@@ -1,6 +1,7 @@
 package dev.valkhes.mealplanner.ui.common
 
 import androidx.compose.runtime.Composable
+import dev.valkhes.mealplanner.application.habits.Reason
 import dev.valkhes.mealplanner.domain.habits.Habit
 import dev.valkhes.mealplanner.domain.journal.MealSlot
 import dev.valkhes.mealplanner.domain.shared.DomainError
@@ -50,6 +51,24 @@ fun habitText(
     return parts.joinToString(" · ")
 }
 
+/** "not made for 12 days · about every 10 days", or "2 times · not made for 7 days". */
+@Composable
+fun reasonText(reason: Reason): String =
+    when (reason) {
+        is Reason.Rhythm ->
+            pluralStringResource(Res.plurals.reason_since, reason.daysSince, reason.daysSince) + " · " +
+                pluralStringResource(Res.plurals.every_days, reason.intervalDays, reason.intervalDays)
+        is Reason.Frequent ->
+            pluralStringResource(Res.plurals.times_count, reason.count, reason.count) + " · " +
+                pluralStringResource(Res.plurals.reason_since, reason.daysSince, reason.daysSince)
+    }
+
+/** 24-hour clock, "21:00": the same in both languages. */
+fun timeText(
+    hour: Int,
+    minute: Int,
+): String = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
+
 @Composable
 fun errorText(error: DomainError): String = stringResource(ERRORS.getValue(error))
 
@@ -62,4 +81,6 @@ private val ERRORS: Map<DomainError, StringResource> =
         DomainError.MEAL_UNKNOWN to Res.string.error_meal_unknown,
         DomainError.MEAL_ALREADY_RETRACTED to Res.string.error_meal_already_retracted,
         DomainError.RECIPE_INVALID to Res.string.error_recipe_invalid,
+        DomainError.ABSENCE_INVALID to Res.string.error_absence_invalid,
+        DomainError.ABSENCE_UNKNOWN to Res.string.error_absence_unknown,
     )

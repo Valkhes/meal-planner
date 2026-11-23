@@ -85,7 +85,7 @@ class ArchitectureTest {
                 val context = contextOf(file.readLines().first { it.startsWith("package ") }.removePrefix("package ")) ?: continue
                 for (imp in imports(file)) {
                     val used = contextOf(imp) ?: continue
-                    if (used != context && used !in ALLOWED.getValue(context)) violations += "${file.relativeTo(root)}: $context uses $used ($imp)"
+                    if (used != context && used !in ALLOWED[context].orEmpty()) violations += "${file.relativeTo(root)}: $context uses $used ($imp)"
                 }
             }
         }
@@ -122,12 +122,13 @@ class ArchitectureTest {
         val ALLOWED: Map<String, Set<String>> =
             mapOf(
                 "shared" to emptySet(),
-                "events" to setOf("shared", "journal", "cookbook"),
+                "events" to setOf("shared", "journal", "cookbook", "planning"),
                 "journal" to setOf("shared", "events"),
                 "cookbook" to setOf("shared", "events"),
+                "planning" to setOf("shared", "events"),
                 "habits" to setOf("shared", "journal", "cookbook"),
                 "assistant" to setOf("shared", "journal", "cookbook", "server"),
-                "server" to setOf("shared", "events", "journal", "cookbook", "habits"),
+                "server" to setOf("shared", "events", "journal", "cookbook", "planning", "habits"),
             )
     }
 }

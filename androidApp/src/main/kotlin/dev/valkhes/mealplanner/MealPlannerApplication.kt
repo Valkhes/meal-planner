@@ -8,6 +8,6 @@ class MealPlannerApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        EveningReminder.schedule(this)
+        EveningReminder.schedule(this, container.reminder.current(), replace = false)
     }
 }

@@ -90,4 +90,35 @@
     <string name="error_meal_unknown">Ce repas n\'existe plus.</string>
     <string name="error_meal_already_retracted">Ce repas a déjà été retiré.</string>
     <string name="error_recipe_invalid">Quelque chose n\'est pas valide dans cette recette : vérifiez la durée et la longueur des lignes.</string>
+    <string name="tab_settings">Réglages</string>
+
+    <string name="tonight_title">Ce soir</string>
+    <string name="tonight_any_time">Peu importe</string>
+    <string name="tonight_learning">En rodage : %1$d repas notés sur %2$d. Pour l\'instant, voici les plats que vous faites le plus.</string>
+    <string name="tonight_empty">Notez quelques repas et les suggestions apparaîtront ici.</string>
+    <string name="tonight_none_fit">Rien de ce que vous faites d\'habitude ne tient dans ce temps.</string>
+    <string name="tonight_away">Vous êtes absents aujourd\'hui.</string>
+    <plurals name="reason_since">
+        <item quantity="one">pas fait depuis %1$d jour</item>
+        <item quantity="other">pas fait depuis %1$d jours</item>
+    </plurals>
+
+    <string name="absence_proposal_title">Noter cette absence ?</string>
+    <string name="absence_range">du %1$s au %2$s</string>
+    <string name="absences_title">Absences</string>
+    <string name="absences_empty">Aucune absence prévue.</string>
+    <string name="absences_hint">Vous pouvez aussi taper « on part du 3 au 10 » depuis l\'accueil.</string>
+    <string name="absence_add">Ajouter une absence</string>
+    <string name="absence_from">Du</string>
+    <string name="absence_to">Au</string>
+    <string name="action_remove">Supprimer</string>
+
+    <string name="settings_reminder_title">Rappel du soir</string>
+    <string name="settings_reminder_enabled">Demander ce qu\'on a mangé, les soirs où rien n\'a été noté</string>
+    <string name="settings_reminder_time">Heure : %1$s</string>
+    <string name="time_earlier">15 min plus tôt</string>
+    <string name="time_later">15 min plus tard</string>
+
+    <string name="error_absence_invalid">Vérifiez les dates : la fin doit être après le début, dans l\'année.</string>
+    <string name="error_absence_unknown">Cette absence n\'existe plus.</string>
 </resources>

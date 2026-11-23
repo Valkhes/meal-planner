@@ -9,6 +9,10 @@ import dev.valkhes.mealplanner.domain.cookbook.RecipeEdited
 import dev.valkhes.mealplanner.domain.journal.MealLogged
 import dev.valkhes.mealplanner.domain.journal.MealRetracted
 import dev.valkhes.mealplanner.domain.journal.MealSlot
+import dev.valkhes.mealplanner.domain.planning.AbsenceId
+import dev.valkhes.mealplanner.domain.planning.AbsenceRemoved
+import dev.valkhes.mealplanner.domain.planning.AbsenceSet
+import dev.valkhes.mealplanner.domain.shared.DateRange
 import dev.valkhes.mealplanner.domain.shared.DishId
 import dev.valkhes.mealplanner.domain.shared.DomainEvent
 import dev.valkhes.mealplanner.domain.shared.MealId
@@ -65,6 +69,18 @@ object EventGoldens {
                     DishId("0193a1b2-0000-7000-8000-000000000002"),
                     Recipe(listOf(Ingredient("potatoes", "1 kg"), Ingredient("salt")), listOf("Slice.", "Bake 1 h."), minutes = 75),
                 ),
+            ),
+            Golden(
+                "AbsenceSet",
+                1,
+                """{"absenceId":"0193a1b2-0000-7000-8000-000000000003","from":"2026-12-20","to":"2027-01-02"}""",
+                AbsenceSet(AbsenceId("0193a1b2-0000-7000-8000-000000000003"), DateRange(LocalDate(2026, 12, 20), LocalDate(2027, 1, 2))),
+            ),
+            Golden(
+                "AbsenceRemoved",
+                1,
+                """{"absenceId":"0193a1b2-0000-7000-8000-000000000003"}""",
+                AbsenceRemoved(AbsenceId("0193a1b2-0000-7000-8000-000000000003")),
             ),
         )
 }

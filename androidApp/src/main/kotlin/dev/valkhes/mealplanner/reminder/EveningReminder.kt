@@ -20,30 +20,42 @@ import dev.valkhes.mealplanner.MealPlannerApplication
 import dev.valkhes.mealplanner.R
 import dev.valkhes.mealplanner.application.shared.today
 import dev.valkhes.mealplanner.domain.journal.MealSlot
+import dev.valkhes.mealplanner.ui.ReminderSetting
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 /**
- * One notification at 21:00, only when no dinner was logged that evening, answerable without opening
- * the app (README, "the evening reminder"). Scheduled on the phone: no push service.
+ * One notification at the chosen time (21:00 by default), only when no dinner was logged that
+ * evening and the household is not away, answerable without opening the app (README, "the evening
+ * reminder"). Scheduled on the phone: no push service.
  */
 object EveningReminder {
     private const val WORK = "evening-reminder"
     private const val CHANNEL = "evening"
     const val NOTIFICATION_ID: Int = 2100
-    private val TIME: LocalTime = LocalTime.of(21, 0)
 
-    fun schedule(context: Context) {
+    /** Plans the next reminders; [replace] moves an existing schedule to a new time. Disabled: cancels it. */
+    fun schedule(
+        context: Context,
+        setting: ReminderSetting,
+        replace: Boolean,
+    ) {
+        val work = WorkManager.getInstance(context)
+        if (!setting.enabled) {
+            work.cancelUniqueWork(WORK)
+            return
+        }
         val now = ZonedDateTime.now()
-        var next = now.with(TIME)
+        var next = now.with(LocalTime.of(setting.hour, setting.minute))
         if (!next.isAfter(now)) next = next.plusDays(1)
         val request =
             PeriodicWorkRequestBuilder<Worker>(1, TimeUnit.DAYS)
                 .setInitialDelay(Duration.between(now, next).toMillis(), TimeUnit.MILLISECONDS)
                 .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK, ExistingPeriodicWorkPolicy.KEEP, request)
+        val policy = if (replace) ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE else ExistingPeriodicWorkPolicy.KEEP
+        work.enqueueUniquePeriodicWork(WORK, policy, request)
     }
 
     class Worker(
@@ -52,10 +64,16 @@ object EveningReminder {
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
             val container = (applicationContext as MealPlannerApplication).container
+            if (!container.reminder.current().enabled) return Result.success()
             val server = container.server()
             val today = container.clock.today()
-            if (server.mealsOn(today).any { it.meal.slot == MealSlot.DINNER }) return Result.success()
-            val dishes = server.suggestions(2).map { it.dish.id.value to it.dish.name.text }
+            if (server.isAway(today) || server.mealsOn(today).any { it.meal.slot == MealSlot.DINNER }) return Result.success()
+            val dishes =
+                server
+                    .tonight(null)
+                    .suggestions
+                    .take(2)
+                    .map { it.dish.id.value to it.dish.name.text }
             show(applicationContext, today.toString(), dishes)
             return Result.success()
         }

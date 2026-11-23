@@ -243,8 +243,8 @@ application API or its events, never through its internals.
 |---|---|
 | **Journal** | meals eaten (`MealLogged`, `MealRetracted`) |
 | **Cookbook** | dishes and their recipes (`DishCreated`, `DishRenamed`, `DishesMerged`, `RecipeEdited`) |
-| **Habits** | read side only: frequency, typical interval, weekday patterns, real cooking time |
-| **Planning** | absences, "Tonight", the week plan |
+| **Habits** | read side only: frequency, typical interval, "Tonight"; later weekday patterns and real cooking time |
+| **Planning** | absences (`AbsenceSet`, `AbsenceRemoved`); later the week plan |
 | **Shopping** | the shared list |
 | **Household** | phones, pairing, sync |
 | **Assistant** | interpreters: text to commands |
@@ -286,7 +286,7 @@ Three screens:
 
 Plus **the evening reminder**, since the whole app depends on meals being
 logged:
-- **When:** at 21:00 (choosing the time comes later), and only if no
+- **When:** at the time set in Settings (21:00 by default), and only if no
   dinner was logged that evening. There is no reminder during absences,
   and none on a day marked "eating out".
 - **Answer in the notification**, without opening the app:
@@ -307,18 +307,28 @@ logged:
 The v0 runs on one phone. The event log is there from day one, so sync can
 be added later with no migration.
 
+### Built since
+
+- **"Tonight"**, at the top of the home screen. Pick the time available
+  (15 / 30 / 45 min or any) and get three dishes. They are the most due
+  against the household's own rhythm, they fit in that time (a dish
+  without a known time always fits), and none was eaten today. Each comes
+  with its reason ("not made for 12 days · about every 10 days"). A tap
+  prepares tonight's log, to confirm. During the break-in (fewer than 10
+  meals logged), it says so and offers the most frequent dishes.
+- **Absences.** Set them in Settings, or type "on part du 3 au 10" /
+  "away from the 28th to the 2nd" in the input box. Days away do not count
+  in the rhythms, and there is no reminder on those days.
+- **The evening reminder's settings**: on or off, and its time in steps
+  of 15 minutes. These are settings of the phone, not household data.
+
 ### Next, in order
 
 - **Sync between two phones** (pairing by QR code, local network, button).
-- **"Tonight"**: given the time available (15 / 30 / 45 / 60+ min), three
-  dishes that are due according to the household's rhythm and fit in that
-  time. Each comes with the reason ("not made for 12 days, usually every
-  10"). Learned patterns include weekdays ("pizza on Fridays") and each
-  dish's real cooking time.
 - **Leftovers** ("lasagne left from yesterday, 0 min") at the top of
   "Tonight".
-- **Absences** ("away from the 3rd to the 10th"), so the rhythm is not
-  skewed and the plan skips those days.
+- **Learned patterns for "Tonight"**: weekdays ("pizza on Fridays") and
+  each dish's real cooking time.
 - **Week plan** in one tap, editable, and a **shared shopping list**
   generated from the plan, grouped by aisle.
 - **Recipes to try**: a "to try" list. "Tonight" offers one of them now

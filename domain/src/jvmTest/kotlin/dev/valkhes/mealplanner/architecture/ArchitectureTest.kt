@@ -126,9 +126,10 @@ class ArchitectureTest {
                 "journal" to setOf("shared", "events"),
                 "cookbook" to setOf("shared", "events"),
                 "planning" to setOf("shared", "events"),
+                "sync" to setOf("shared", "events"),
                 "habits" to setOf("shared", "journal", "cookbook"),
                 "assistant" to setOf("shared", "journal", "cookbook", "server"),
-                "server" to setOf("shared", "events", "journal", "cookbook", "planning", "habits"),
+                "server" to setOf("shared", "events", "journal", "cookbook", "planning", "habits", "sync"),
             )
     }
 }

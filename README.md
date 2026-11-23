@@ -324,7 +324,12 @@ be added later with no migration.
 
 ### Next, in order
 
-- **Sync between two phones** (pairing by QR code, local network, button).
+- **Sync between two phones.** The protocol and the merge are built and
+  tested (`application/src/commonMain/kotlin/dev/valkhes/mealplanner/application/sync/SyncProtocol.kt`,
+  `LocalMealServer.sync`). Each phone sends the ids it has, then the events
+  the other lacks. Both end with the union, replayed in recorded order, and
+  syncing twice changes nothing. What remains is the transport, the pairing
+  and the encryption: see "Open decisions".
 - **Leftovers** ("lasagne left from yesterday, 0 min") at the top of
   "Tonight".
 - **Learned patterns for "Tonight"**: weekdays ("pizza on Fridays") and
@@ -348,6 +353,20 @@ be added later with no migration.
   30 min" by calling the engine.
 
 ## Open decisions
+
+- **How the two phones talk.** On Android, any socket, even to a phone on
+  the same Wi-Fi, needs the `INTERNET` permission, which constraint 1 and
+  the APK check rule out today. The options:
+  - allow `INTERNET`, and confine it in code to private addresses on the
+    local network, with a check that only the sync adapter opens sockets;
+  - Bluetooth, which needs no `INTERNET` and works without Wi-Fi, but asks
+    for the Bluetooth permissions;
+  - a file sent from phone to phone (Android share menu, Nearby Share), with
+    no permission at all, but with a manual step.
+
+  Pairing has the same kind of trade-off: scanning a QR code needs the
+  camera permission and a scanner library (ZXing works offline), while
+  typing a short code needs neither.
 
 - **Importing a recipe from a link.** Most recipe sites embed a
   machine-readable recipe (schema.org/Recipe), so a link could be imported

@@ -14,6 +14,11 @@ import dev.valkhes.mealplanner.application.shared.Clock
 import dev.valkhes.mealplanner.application.shared.Device
 import dev.valkhes.mealplanner.application.shared.IdGenerator
 import dev.valkhes.mealplanner.application.shared.today
+import dev.valkhes.mealplanner.application.sync.SyncChannel
+import dev.valkhes.mealplanner.application.sync.SyncCodec
+import dev.valkhes.mealplanner.application.sync.SyncMessage
+import dev.valkhes.mealplanner.application.sync.SyncProtocolMismatch
+import dev.valkhes.mealplanner.application.sync.SyncReport
 import dev.valkhes.mealplanner.domain.cookbook.DishName
 import dev.valkhes.mealplanner.domain.journal.MealLogged
 import dev.valkhes.mealplanner.domain.journal.MealSlot
@@ -76,6 +81,34 @@ class LocalMealServer private constructor(
     override suspend fun absences(): List<Absence> = read { s -> s.planning.all.filter { it.days.endInclusive >= clock.today() } }
 
     override suspend fun isAway(date: LocalDate): Boolean = read { it.planning.isAway(date) }
+
+    /**
+     * Exchanges events with the other phone over [channel] (README, "Sync"): both sides end with the
+     * union of both logs, replayed in recorded order. Events from a newer app are kept and passed on.
+     */
+    suspend fun sync(channel: SyncChannel): SyncReport {
+        val mine = mutex.withLock { store.all() }
+        channel.send(SyncMessage.Hello(SyncCodec.PROTOCOL, device.deviceId, mine.mapTo(HashSet()) { it.id }))
+        val hello = channel.receive() as? SyncMessage.Hello ?: throw IllegalStateException("expected the other phone's hello")
+        if (hello.protocol != SyncCodec.PROTOCOL) throw SyncProtocolMismatch(hello.protocol)
+        val missing = mine.filter { it.id !in hello.ids }
+        channel.send(SyncMessage.Events(missing))
+        val theirs = channel.receive() as? SyncMessage.Events ?: throw IllegalStateException("expected the other phone's events")
+        return SyncReport(sent = missing.size, received = receive(theirs.envelopes))
+    }
+
+    /** Stores the events not seen yet and replays the whole log: they may sit anywhere in recorded order. */
+    private suspend fun receive(envelopes: List<EventEnvelope>): Int =
+        mutex.withLock {
+            val known = store.all().mapTo(HashSet()) { it.id }
+            val fresh = envelopes.filter { it.id !in known }.distinctBy { it.id }
+            if (fresh.isNotEmpty()) {
+                store.append(fresh)
+                state = replay(store.all(), schema)
+                revisionFlow.value += 1
+            }
+            fresh.size
+        }
 
     private suspend fun <T> read(view: (MealState) -> T): T = mutex.withLock { view(state) }
 
@@ -213,15 +246,17 @@ class LocalMealServer private constructor(
             ids: IdGenerator,
             device: Device,
             schema: EventSchema = EventSchema.CURRENT,
-        ): LocalMealServer {
-            val state =
-                store.all().fold(MealState.EMPTY) { s, envelope ->
-                    when (val read = schema.read(envelope)) {
-                        is ReadEvent.Known -> s.apply(read.event)
-                        is ReadEvent.Unknown -> s
-                    }
+        ): LocalMealServer = LocalMealServer(store, schema, clock, ids, device, replay(store.all(), schema))
+
+        private fun replay(
+            envelopes: List<EventEnvelope>,
+            schema: EventSchema,
+        ): MealState =
+            envelopes.fold(MealState.EMPTY) { s, envelope ->
+                when (val read = schema.read(envelope)) {
+                    is ReadEvent.Known -> s.apply(read.event)
+                    is ReadEvent.Unknown -> s
                 }
-            return LocalMealServer(store, schema, clock, ids, device, state)
-        }
+            }
     }
 }
